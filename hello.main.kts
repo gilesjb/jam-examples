@@ -3,27 +3,24 @@
 @file:DependsOn("org.copalis:jam:0.9.1")
 
 interface HelloWorld : JavaProject {
-    fun hello() = "Hello, World!"
 
-    fun printHello() {
-        println(hello())
-    }
+    fun world() = "World"
 
-    fun helloFile() = read("hello.txt")
+    fun worldName() = read("world.txt")
 
-    fun printFile() {
-        println(helloFile())
-    }
+    fun greet(place : String) = println("Hello, ${place}!")
 
-    fun helloClasses() = javac("classes", sourceFiles("HelloWorld.java"))
+    fun helloJava() = sourceFiles("HelloWorld.java")
+
+    fun helloClasses() = classpath(javac("classes", helloJava()))
 
     fun runHello() {
-        java("-cp", classpath(helloClasses()), "HelloWorld")
+        java("-cp", helloClasses(), "HelloWorld")
     }
 
     fun printHellos() {
-        printHello()
-        printFile()
+        greet(world())
+        greet(worldName())
         runHello()
     }
 }
