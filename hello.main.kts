@@ -4,7 +4,7 @@
 
 interface HelloWorld : JavaProject {
 
-    fun world() = "World"
+    fun worldStr() = "World"
 
     fun worldName() = read("world.txt")
 
@@ -19,7 +19,7 @@ interface HelloWorld : JavaProject {
     }
 
     fun printHellos() {
-        greet(world())
+        greet(worldStr())
         greet(worldName())
         runHello()
     }
