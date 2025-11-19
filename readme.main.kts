@@ -8,17 +8,15 @@ interface Docs : FileProject {
 
     override fun buildPath() = "docs"
 
-    fun build(idx : Int, opts : String) : String {
+    fun capture(idx : Int, cmd : String) : String {
         val path = String.format("%s/%02d.png", buildPath("pics"), idx)
-        exec("termshot", "-c", "--no-decoration", "--no-shadow", "-f", path, "--", "./hello.main.kts " + opts)
-        return "![Title]($path)"
+        exec("termshot", "-C", "90", "-cs", "--no-decoration", "--no-shadow", "-f", path, "--", cmd)
+        return "<img src='$path' width='1000'>"
     }
 
-    fun touch(idx : Int, src : String) : String {
-        val file = sourceFile(src).toString()
-        exec("touch", file)
-        return "touch $file"
-    }
+    fun build(idx : Int, opts : String) = capture(idx, "./hello.main.kts " + opts)
+
+    fun touch(idx : Int, src : String) = capture(idx, "touch ${sourceFile(src)}")
 
     fun markdown() : String {
         exec("./hello.main.kts", "clean")
@@ -32,30 +30,36 @@ especially script for build automation.
 
 ### Jam scripts
 
-Here is an example build script. The file name is `hello.main.kts`.
+Here is an example build script written in Kotlin. Kotlin scripts must have names that end with `.main.kts`.
+This file is called `hello.main.kts`.
 
 ```kotlin
 ${read("../hello.main.kts")}
 ```
 
-The script can be run directly from the command line, for example with the `--help` option:
+The script can be run directly from the command line.
+It just requires Kotlin to be installed; the Jam library will be downloaded automatically.
+
+Passing the `--help` option displays options:
 ${build(i++, "--help")}
 
 ### Build targets
 
-Specifying `--targets` shows
+Specifying `--targets` shows the build targets
 ${build(i++, "--targets")}
-         
-Targets are just project methods that have 0 arguments, for example `worldStr()`.
+Targets are just project methods that have 0 arguments.
+The target listing shows method defined by the script's `HelloWorld` interface and inherited from parent interfaces.
+
+Let's run the `worldStr` method:
 ${build(i++, "worldStr")}
 The output log shows that the method returned the value "World".
  
-Another target method is `worldName()`.
+Another target method is `worldName`, which reads text from a file:
 ${build(i++, "worldName")}
 
 ### Result caching
 
-If we look at the targets again we can see that both `worldStr` and `worldName` targets are listed as **fresh**.
+If we look at the targets again we can see that both `worldStr` and `worldName` targets are tagged as **fresh**.
 This means that their results are cached and up to date.
 ${build(i++, "--targets")}
 
@@ -67,27 +71,27 @@ ${build(i++, "worldName")}
 Jam is able to infer that the result of `worldName` depends on the contents of the file `src/world.txt`.
 This means that if the last-modified time of that file changes, the cached result will be invalidated.
 
-```
 ${touch(i++, "world.txt")}
-```
 
 Now the `worldName` target is shown as stale.
 ${build(i++, "--targets")}
 
-Executing the target again, it is rebuilt.
+Executing the target again it will be rebuilt.
 ${build(i++, "worldName")}
 
 ### Compiling code
 
+The `JavaProject` interface provides a variety of methods for building and executing Java code.
+This is demonstrated by the `runHello` target:
 ${build(i++, "runHello")}
 
-Similarly to the previous example, the compiled classes are cached
+Jam stores references to the compiled classes.
 ${build(i++, "runHello")}
 
-```
+But if there are modifications to source files,
 ${touch(i++, "HelloWorld.java")}
-```
 
+then Jam will recompile the classes.
 ${build(i++, "runHello")}
 """
     }
