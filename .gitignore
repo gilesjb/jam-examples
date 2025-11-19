@@ -1,2 +1,4 @@
 *.ser
 build/
+docs/
+**/.DS_Store
