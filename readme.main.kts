@@ -25,8 +25,15 @@ interface Docs : FileProject {
         return """
 # Jam build tool
 
-**Jam** is a library for writing command-line scripts in Java or Kotlin,
-especially script for build automation.
+**Jam** is a library designed to be used in Java or Kotlin command-line scripts,
+especially scripts for build automation.
+
+There are 3 parts to Jam:
+1. A dependency-aware method memoizer
+2. A script controller that handles command-line arguments
+3. A library of utility functions for compiling code
+
+## Jam in action
 
 ### Jam scripts
 
@@ -48,20 +55,25 @@ ${build(i++, "--help")}
 Specifying `--targets` shows the build targets
 ${build(i++, "--targets")}
 Targets are just project methods that have 0 arguments.
-The target listing shows method defined by the script's `HelloWorld` interface and inherited from parent interfaces.
+The target listing shows method defined by the script's `HelloWorld` interface and inherited from its parent interfaces.
 
-Let's run the `worldStr` method:
+Let's run the `worldStr` target:
 ${build(i++, "worldStr")}
-The output log shows that the method returned the value "World".
+The output log shows that `worldStr()` was executed and returned the value "World".
  
-Another target method is `worldName`, which reads text from a file:
+Another target is `worldName`
 ${build(i++, "worldName")}
+Now the output log shows that `worldName()` was executed, and it in turn called `read("world.text")`
 
 ### Result caching
 
 If we look at the targets again we can see that both `worldStr` and `worldName` targets are tagged as **fresh**.
 This means that their results are cached and up to date.
 ${build(i++, "--targets")}
+
+The cache contents can be viewed with the `--cache` option.
+${build(i++, "--cache")}
+(Notice that the results cache is stored in a hidden file, and its name is derived from the project name.)
 
 Because its result is cached, if we run `worldName` again the result will be fetched from cache.
 ${build(i++, "worldName")}
