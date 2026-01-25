@@ -1,27 +1,26 @@
-#!/usr/bin/env kotlin -Xjvm-default=all
-@file:Repository("https://raw.githubusercontent.com/gilesjb/jam-repo/refs/heads/main")
-@file:DependsOn("org.copalis:jam:0.9.1")
+#!/usr/bin/env kotlin -Xjvm-default=all -cp ../jam/build/jam-0.9.1.jar
 
 // Uses https://github.com/homeport/termshot
 
 interface Docs : FileProject {
 
-    override fun buildPath() = "docs"
+    fun absPath(path : String) = java.nio.file.Path.of(buildPath(path)).toAbsolutePath()
 
-    fun capture(idx : Int, cmd : String) : String {
-        val tmp = String.format("%s/%02d.png", buildPath("tmp"), idx)
-        val path = String.format("%s/%02d.png", buildPath("pics"), idx)
-        exec("termshot", "-C", "90", "-cs", "--no-decoration", "--no-shadow", "-f", tmp, "--", cmd)
-        exec("magick", tmp, "-strip", "-colors", "16", "+dither", "-alpha", "off", path)
-        return "<img src='$path' width='1000'>"
+    fun capture(idx : Int, pb : ProcessBuilder, cmd : String) : String {
+        val tmp = String.format("%s/%02d.png", absPath("tmp"), idx)
+        val path = String.format("%s/%02d.png", absPath("docs/pics"), idx)
+        exec(pb, "termshot", "-C", "90", "-cs", "--no-decoration", "--no-shadow", "-f", tmp, "--", cmd)
+        exec(pb, "magick", tmp, "-strip", "-colors", "16", "+dither", "-alpha", "off", path)
+        return String.format("<img src='docs/pics/%02d.png' width='1000'>", idx)
     }
 
-    fun build(idx : Int, opts : String) = capture(idx, "./hello.main.kts " + opts)
+    fun build(idx : Int, pb : ProcessBuilder, opts : String) = capture(idx, pb, "./hello.main.kts " + opts)
 
-    fun touch(idx : Int, src : String) = capture(idx, "touch src/${src}")
+    fun touch(idx : Int, pb : ProcessBuilder, src : String) = capture(idx, pb, "touch src/${src}")
 
     fun markdown() : String {
-        exec("./hello.main.kts", "clean")
+        val helloProj = ProcessBuilder().directory(File("src/hello-world")).inheritIO()
+        exec(helloProj, "./hello.main.kts", "clean")
         var i = 0
 
         return """
@@ -55,70 +54,70 @@ Here is an example build script written in Kotlin. Kotlin scripts must have name
 This file is called `hello.main.kts`.
 
 ```kotlin
-${read("../hello.main.kts")}
+${read("hello-world/hello.main.kts")}
 ```
 
 The script can be run directly from the command line.
 It just requires Kotlin to be installed; the Jam library will be downloaded automatically.
 
 Passing the `--help` option displays options:
-${build(i++, "--help")}
+${build(i++, helloProj, "--help")}
 
 ### Build targets
 
 Specifying `--targets` shows the build targets
-${build(i++, "--targets")}
+${build(i++, helloProj, "--targets")}
 Targets are just project methods that have 0 arguments.
 The target listing shows method defined by the script's `HelloWorld` interface and inherited from its parent interfaces.
 
 Let's run the `worldStr` target:
-${build(i++, "worldStr")}
+${build(i++, helloProj, "worldStr")}
 The output log shows that `worldStr()` was executed and returned the value "World".
  
 Another target is `worldName`
-${build(i++, "worldName")}
+${build(i++, helloProj, "worldName")}
 Now the output log shows that `worldName()` was executed, and it in turn called `read("world.text")`
 
 ### Result caching
 
 If we look at the targets again we can see that both `worldStr` and `worldName` targets are tagged as **fresh**.
 This means that their results are cached and up to date.
-${build(i++, "--targets")}
+${build(i++, helloProj, "--targets")}
 
 The cache contents can be viewed with the `--cache` option.
-${build(i++, "--cache")}
+${build(i++, helloProj, "--cache")}
 (Notice that the results cache is stored in a hidden file, and its name is derived from the project name.)
 
 Because its result is cached, if we run `worldName` again the result will be fetched from cache.
-${build(i++, "worldName")}
+${build(i++, helloProj, "worldName")}
 
 ### Dependency tracking
 
 Jam is able to infer that the result of `worldName` depends on the contents of the file `src/world.txt`.
 This means that if the last-modified time of that file changes, the cached result will be invalidated.
 
-${touch(i++, "world.txt")}
+${touch(i++, helloProj, "world.txt")}
 
 Now the `worldName` target is shown as stale.
-${build(i++, "--targets")}
+${build(i++, helloProj, "--targets")}
 
 Executing the target again it will be rebuilt.
-${build(i++, "worldName")}
+${build(i++, helloProj, "worldName")}
 
 ### Compiling code
 
 The `JavaProject` interface provides a variety of methods for building and executing Java code.
 This is demonstrated by the `runHello` target:
-${build(i++, "runHello")}
+${build(i++, helloProj, "runHello")}
 
 Jam stores references to the compiled classes.
-${build(i++, "runHello")}
+${build(i++, helloProj, "runHello")}
 
 But if there are modifications to source files,
-${touch(i++, "HelloWorld.java")}
+${touch(i++, helloProj, "HelloWorld.java")}
 
 then Jam will recompile the classes.
-${build(i++, "runHello")}
+${build(i++, helloProj, "runHello")}
 
 ## Status
 
@@ -146,7 +145,7 @@ To view the JavaDocs type `./make-jam viewDocs`.
     }
 
     fun readme() {
-        write("../README.md", markdown())
+        write("README.md", markdown())
     }
 }
 
