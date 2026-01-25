@@ -14,7 +14,7 @@ interface Docs : FileProject {
         return String.format("<img src='docs/pics/%02d.png' width='1000'>", idx)
     }
 
-    fun build(idx : Int, pb : ProcessBuilder, opts : String) = capture(idx, pb, "./hello.main.kts " + opts)
+    fun build(idx : Int, pb : ProcessBuilder, cmd : String) = capture(idx, pb, cmd)
 
     fun touch(idx : Int, pb : ProcessBuilder, src : String) = capture(idx, pb, "touch src/${src}")
 
@@ -61,35 +61,35 @@ The script can be run directly from the command line.
 It just requires Kotlin to be installed; the Jam library will be downloaded automatically.
 
 Passing the `--help` option displays options:
-${build(i++, helloProj, "--help")}
+${build(i++, helloProj, "./hello.main.kts --help")}
 
 ### Build targets
 
 Specifying `--targets` shows the build targets
-${build(i++, helloProj, "--targets")}
+${build(i++, helloProj, "./hello.main.kts --targets")}
 Targets are just project methods that have 0 arguments.
 The target listing shows method defined by the script's `HelloWorld` interface and inherited from its parent interfaces.
 
 Let's run the `worldStr` target:
-${build(i++, helloProj, "worldStr")}
+${build(i++, helloProj, "./hello.main.kts worldStr")}
 The output log shows that `worldStr()` was executed and returned the value "World".
  
 Another target is `worldName`
-${build(i++, helloProj, "worldName")}
+${build(i++, helloProj, "./hello.main.kts worldName")}
 Now the output log shows that `worldName()` was executed, and it in turn called `read("world.text")`
 
 ### Result caching
 
 If we look at the targets again we can see that both `worldStr` and `worldName` targets are tagged as **fresh**.
 This means that their results are cached and up to date.
-${build(i++, helloProj, "--targets")}
+${build(i++, helloProj, "./hello.main.kts --targets")}
 
 The cache contents can be viewed with the `--cache` option.
-${build(i++, helloProj, "--cache")}
+${build(i++, helloProj, "./hello.main.kts --cache")}
 (Notice that the results cache is stored in a hidden file, and its name is derived from the project name.)
 
 Because its result is cached, if we run `worldName` again the result will be fetched from cache.
-${build(i++, helloProj, "worldName")}
+${build(i++, helloProj, "./hello.main.kts worldName")}
 
 ### Dependency tracking
 
@@ -99,25 +99,25 @@ This means that if the last-modified time of that file changes, the cached resul
 ${touch(i++, helloProj, "world.txt")}
 
 Now the `worldName` target is shown as stale.
-${build(i++, helloProj, "--targets")}
+${build(i++, helloProj, "./hello.main.kts --targets")}
 
 Executing the target again it will be rebuilt.
-${build(i++, helloProj, "worldName")}
+${build(i++, helloProj, "./hello.main.kts worldName")}
 
 ### Compiling code
 
 The `JavaProject` interface provides a variety of methods for building and executing Java code.
 This is demonstrated by the `runHello` target:
-${build(i++, helloProj, "runHello")}
+${build(i++, helloProj, "./hello.main.kts runHello")}
 
 Jam stores references to the compiled classes.
-${build(i++, helloProj, "runHello")}
+${build(i++, helloProj, "./hello.main.kts runHello")}
 
 But if there are modifications to source files,
 ${touch(i++, helloProj, "HelloWorld.java")}
 
 then Jam will recompile the classes.
-${build(i++, helloProj, "runHello")}
+${build(i++, helloProj, "./hello.main.kts runHello")}
 
 ## Status
 
