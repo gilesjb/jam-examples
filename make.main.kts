@@ -10,7 +10,7 @@ interface Docs : FileProject {
         val tmp = String.format("%s/%02d.png", absPath("tmp"), idx)
         val path = String.format("%s/%02d.png", absPath("docs/pics"), idx)
         exec(pb, "termshot", "-C", "90", "-cs", "--no-decoration", "--no-shadow", "-f", tmp, "--", cmd)
-        exec(pb, "magick", tmp, "-strip", "-colors", "16", "+dither", "-alpha", "off", path)
+        exec(pb, "magick", tmp, "-strip", "-colors", "16", "+dither", "-alpha", "Off", path)
         return String.format("<img src='docs/pics/%02d.png' width='1000'>", idx)
     }
 
@@ -19,7 +19,9 @@ interface Docs : FileProject {
     fun touch(idx : Int, pb : ProcessBuilder, src : String) = capture(idx, pb, "touch src/${src}")
 
     fun markdown() : String {
+        val fibProj = ProcessBuilder().directory(File("src/fibonacci")).inheritIO()
         val helloProj = ProcessBuilder().directory(File("src/hello-world")).inheritIO()
+        exec(fibProj, "./fibonacci.main.kts", "clean")
         exec(helloProj, "./hello.main.kts", "clean")
         var i = 0
 
@@ -29,14 +31,47 @@ interface Docs : FileProject {
 **Jam** is a build automation library.
 It lets you write build scripts in plain Kotlin or Java.
 
-* Build *targets* are just methods/functions
-* *Dependencies* between targets are inferred by Jam's dynamic method proxy, which monitors method parameters and return values for references to source files.
-
 There are 3 parts to Jam:
 
-1. A build controller that handles command-line arguments
-2. A dynamic method proxy that memoizes result values and tracks dependencies
-3. A library of predefined build targets and utility functions for compiling code
+## A simple Jam script
+
+Prerequisites: Kotlin installed.
+
+Create a file called `fibonacci.main.kts` and paste the following code into it:
+
+```kotlin
+${read("fibonacci/fibonacci.main.kts")}
+```
+
+and make it executable with `chmod +x fibonacci.main.kts`
+
+Now run it:
+${build(i++, fibProj, "./fibonacci.main.kts")}
+
+What happened here?
+
+* The first line of console output shows the `fib10()` method being executed. This is because the script specified `Fibonacci::fib10` as the default target method.
+* Following lines of console output show all the other Project method calls that were made: `fib 10` means `fib(10)` was called.
+* The return value of the target method is displayed as `Result: 55`.
+
+### Memoization
+
+The script uses a recursive implementation of the Fibonacci sequence. 
+Normally, A call to `fib(10)` would result in a total of 177 recursive method calls,
+but the console log shows far fewer method calls being made.
+The discrepancy is because Jam *memoizes* Project method calls.
+saving return values for later use.
+
+* `[compute]` means a method was executed
+* `[current]` means a cached return value was reused
+
+The recursive calls are shown in a tree-like trace: `fib(10)` → `fib(9)` → `fib(8)` → ... down to `fib(0)` and `fib(1)`.
+Then, on the way back up, it says `[current]` — this means Jam is reusing previously computed results.
+
+Run the script again:
+${build(i++, fibProj, "./fibonacci.main.kts")}
+
+This time the result was retreived from cache without executing any methods!
 
 ## How does it work?
 
@@ -145,6 +180,7 @@ To view the JavaDocs type `./make-jam viewDocs`.
     }
 
     fun readme() {
+        clean()
         write("README.md", markdown())
     }
 }
