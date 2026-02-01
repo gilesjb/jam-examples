@@ -28,12 +28,9 @@ interface Docs : FileProject {
         return """
 # Jam build tool
 
-**Jam** is a build automation library.
-It lets you write build scripts in plain Kotlin or Java.
+**Jam** is a build automation library that allows you to write build scripts in plain Kotlin or Java.
 
-There are 3 parts to Jam:
-
-## A simple Jam script
+## An introduction to Jam
 
 Prerequisites: Kotlin installed.
 
@@ -71,7 +68,22 @@ Then, on the way back up, it says `[current]` — this means Jam is reusing prev
 Run the script again:
 ${build(i++, fibProj, "./fibonacci.main.kts")}
 
-This time the result was retreived from cache without executing any methods!
+This time no methods were executed! The results was fetched straight from cache.
+Speaking of the cache, it can be viewed by running the script with the `--cache` option.
+
+${build(i++, fibProj, "./fibonacci.main.kts --cache")}
+
+## Command line options
+
+Here is the full set of command line options:
+${build(i++, fibProj, "./fibonacci.main.kts --help")}
+
+The most useful option is `--targets`.
+${build(i++, fibProj, "./fibonacci.main.kts --targets")}
+
+The `Fibonacci` project interface defines one target: `fib10`.
+It also inherits a `clean` target from the `Project` interface it extends.
+You can probably guess what the `clean` target does.
 
 ## How does it work?
 
