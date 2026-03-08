@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven"><info organisation="org" module="module" revision="working@Giless-MacBook-Air.local" status="integration" publication="20260306071524"/><dependencies defaultconf="*->default"><dependency org="com.google.code.gson" name="gson" rev="2.10.1"/></dependencies></ivy-module>

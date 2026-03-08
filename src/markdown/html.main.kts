@@ -5,16 +5,17 @@
 
 interface MarkdownBuild : FileProject {
     
-    fun markdown() = sourceFile("README.md")
+    fun markdownFiles() = sourceFiles("*.md")
     
-    fun html() = convertMarkdown("README.html", markdown())
-    
-    fun convertMarkdown(output: String, input: File): File {
+    fun convertFile(input: File): File {
         val parser = org.commonmark.parser.Parser.builder().build()
         val renderer = org.commonmark.renderer.html.HtmlRenderer.builder().build()
         
-        return write(output, renderer.render(parser.parse(input.readText())))
+        val dest = input.relativeTo(File(sourcePath())).path.replace(".md", ".html")
+        return write(dest, renderer.render(parser.parse(input.readText())))
     }
+
+    fun htmlFiles() = markdownFiles().map { convertFile(it) }
 }
 
-Project.run(MarkdownBuild::class.java, MarkdownBuild::html, args)
+Project.run(MarkdownBuild::class.java, MarkdownBuild::htmlFiles, args)

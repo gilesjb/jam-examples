@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="ivy-report.xsl"?>
+<ivy-report version="1.0">
+	<info
+		organisation="org"
+		module="module"
+		revision="working@Giless-MacBook-Air.local"
+
+		conf="default"
+		confs="default"
+		date="20260306071524"/>
+	<dependencies>
+		<module organisation="com.google.code.gson" name="gson">
+			<revision name="2.10.1" status="release" pubdate="20230106074401" resolver="public" artresolver="main" homepage="" downloaded="false" searched="false" default="false" conf="default, compile, runtime, master" position="0">
+				<license name="Apache-2.0" url="https://www.apache.org/licenses/LICENSE-2.0.txt"/>
+				<metadata-artifact status="no" details="" size="3753" time="0" location="/Users/giles/eclipse-workspace/jam-examples/src/java-project/.package-cache/com.google.code.gson/gson/ivy-2.10.1.xml" searched="false" original-local-location="/Users/giles/eclipse-workspace/jam-examples/src/java-project/.package-cache/com.google.code.gson/gson/ivy-2.10.1.xml.original" origin-is-local="false" origin-location="https://repo1.maven.org/maven2/com/google/code/gson/gson/2.10.1/gson-2.10.1.pom"/>
+				<caller organisation="org" name="module" conf="default" rev="2.10.1" rev-constraint-default="2.10.1" rev-constraint-dynamic="2.10.1" callerrev="working@Giless-MacBook-Air.local"/>
+				<artifacts>
+					<artifact name="gson" type="jar" ext="jar" status="no" details="" size="283367" time="0" location="/Users/giles/eclipse-workspace/jam-examples/src/java-project/.package-cache/com.google.code.gson/gson/jars/gson-2.10.1.jar">
+						<origin-location is-local="false" location="https://repo1.maven.org/maven2/com/google/code/gson/gson/2.10.1/gson-2.10.1.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+	</dependencies>
+</ivy-report>

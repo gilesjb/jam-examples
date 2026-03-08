@@ -20,174 +20,136 @@ interface Docs : FileProject {
 
     fun markdown() : String {
         val fibProj = ProcessBuilder().directory(File("src/fibonacci")).inheritIO()
-        val helloProj = ProcessBuilder().directory(File("src/hello-world")).inheritIO()
         exec(fibProj, "./fibonacci.main.kts", "clean")
-        exec(helloProj, "./hello.main.kts", "clean")
+        val javaProj = ProcessBuilder().directory(File("src/java-project")).inheritIO()
+        exec(javaProj, "./make.main.kts", "clean")
+        val htmlProj = ProcessBuilder().directory(File("src/markdown")).inheritIO()
+        exec(htmlProj, "./html.main.kts", "clean")
         var i = 0
 
         return """
 # Jam build tool
 
-**Jam** is a build automation library that allows you to write build scripts in plain Kotlin or Java.
+Jam is a JVM build tool which lets you write build scripts in plain Kotlin or Java. 
+Build targets are just methods. 
+Jam uses a dependency-tracking dynamic proxy to memoize method calls, giving you incremental builds automatically — no explicit dependency declarations required.
+Jam supports incremental builds by memoizing (caching) method calls with a dependency-tracking dynamic proxy.
 
-## An introduction to Jam
+## An example Jam script
 
-Prerequisites: Kotlin installed.
+This is what a Jam build script for a simple Java project looks like:
 
-Create a file called `fibonacci.main.kts` and paste the following code into it:
+```kotlin
+${read("java-project/make.main.kts")}
+```
+
+Some things to note:
+
+- **The shebang line** — `#!/usr/bin/env -S kotlin -Xjvm-default=all` means the script can be executed directly from the command line like a shell script. The `-Xjvm-default=all` flag is required for Jam's proxy mechanism to work with interface default methods.
+- **`@file:DependsOn`** — uses Kotlin's built-in scripting mechanism for declaring dependencies to trigger an automatic download of the Jam library, so no manual installation is needed.
+- **`DemoProject`** — the user-defined project, which must be an interface so that Jam can proxy its methods.
+- **`JavaProject`** — a built-in Jam interface that provides standard methods for Java builds: `javac`, `junit`, `javadoc`, `jar`, `sourceFiles`, `classpath`, and Maven dependency resolution via `resolve`.
+- **`dependencies()`** — a zero-parameter method, which makes it a *target* — something that can be invoked directly from the command line.
+- **`testClasses()` being called twice in `tests()`** — this does *not* cause double compilation, because the second call is served from Jam's memoization cache.
+- **`build()`** — the default target passed to `Project.run`, but any other target can be invoked by name from the command line.
+- **`Project.run`** — this is where the script calls into Jam's build controller, which creates a proxied implementation of the project interface.
+
+The build controller also handles command-line arguments like `--help`
+
+${build(i++, javaProj, "./make.main.kts --help")}
+
+## Try Jam out
+
+If you have Kotlin installed you can easily try out this script.
 
 ```kotlin
 ${read("fibonacci/fibonacci.main.kts")}
 ```
 
-and make it executable with `chmod +x fibonacci.main.kts`
+Save the code to a file called `fibonacci.main.kts` and make it executable with `chmod +x fibonacci.main.kts`.
 
-Now run it:
+Then type `./fibonacci.main.kts --targets` to see what build targets it exposes.
+
+${build(i++, fibProj, "./fibonacci.main.kts --targets")}
+
+Note that the `fib` method is *not* listed as a target.
+Jam project interfaces can contain methods with parameters, but only methods with 0 parameters are targets.
+
+The default target is `fib10`. Let's run that.
+
 ${build(i++, fibProj, "./fibonacci.main.kts")}
 
-What happened here?
-
-* The first line of console output shows the `fib10()` method being executed. This is because the script specified `Fibonacci::fib10` as the default target method.
-* Following lines of console output show all the other Project method calls that were made: `fib 10` means `fib(10)` was called.
-* The return value of the target method is displayed as `Result: 55`.
-
-### Memoization
-
-The script uses a recursive implementation of the Fibonacci sequence. 
-Normally, A call to `fib(10)` would result in a total of 177 recursive method calls,
-but the console log shows far fewer method calls being made.
-The discrepancy is because Jam *memoizes* Project method calls.
-saving return values for later use.
+The console log shows the method call tree
 
 * `[compute]` means a method was executed
 * `[current]` means a cached return value was reused
 
-The recursive calls are shown in a tree-like trace: `fib(10)` → `fib(9)` → `fib(8)` → ... down to `fib(0)` and `fib(1)`.
-Then, on the way back up, it says `[current]` — this means Jam is reusing previously computed results.
+Because of the method memoization `fib` was only executed 11 times.
 
-Run the script again:
+Let's see what happens if we run the script again.
+
 ${build(i++, fibProj, "./fibonacci.main.kts")}
 
-This time no methods were executed! The results was fetched straight from cache.
-Speaking of the cache, it can be viewed by running the script with the `--cache` option.
+This time no methods were executed because Jam reused the memoizer cache.
+We can examine the contents of the cache by using the `--cache` option.
 
 ${build(i++, fibProj, "./fibonacci.main.kts --cache")}
 
-## Command line options
+Try the other command-line options,
+and also see what happens when you execute the `fib50` target.
 
-Here is the full set of command line options:
-${build(i++, fibProj, "./fibonacci.main.kts --help")}
+## Mutable resources
 
-The most useful option is `--targets`.
-${build(i++, fibProj, "./fibonacci.main.kts --targets")}
+We've seen how Jam caches return values across runs.
+If a return value is a reference to a mutable resource like a file,
+Jam can detect if the resource has been modified since the last run and mark the cached value as *stale*.
+The next time a build target that depends on that resource is executed, 
+Jam will re-execute the functions that depend on it.
 
-The `Fibonacci` project interface defines one target: `fib10`.
-It also inherits a `clean` target from the `Project` interface it extends.
-You can probably guess what the `clean` target does.
+This feature gives Jam build scripts the ability to automatically detect when source files have been changed,
+and rebuild the artifacts that depend on them.
 
-## How does it work?
-
-Jam's memoizer intercepts method calls and caches return values, including references to build artifacts. 
-Later method calls with the same parameters are served from cache instead of the method being executed again.
-The cache is also persisted to disk so that Jam can remember the project state between builds.
-Jam also records methods' dependencies on external mutable resources like source files;
-If those resources change, Jam knows that build artifacts derived from them are stale and marks cache entries referring to them as stale.
-
-## Jam in action
-
-### Jam scripts
-
-Here is an example build script written in Kotlin. Kotlin scripts must have names that end with `.main.kts`.
-This file is called `hello.main.kts`.
+Let's see it in action. Here's a script that scans for Markdown files in the source directory (`src` by default)
+and writes their HTML equivalents to the build directory:
 
 ```kotlin
-${read("hello-world/hello.main.kts")}
+${read("markdown/html.main.kts")}
 ```
 
-The script can be run directly from the command line.
-It just requires Kotlin to be installed; the Jam library will be downloaded automatically.
+Running a clean build
+${build(i++, htmlProj, "./html.main.kts")}
 
-Passing the `--help` option displays options:
-${build(i++, helloProj, "./hello.main.kts --help")}
+Running the build again
+${build(i++, htmlProj, "./html.main.kts")}
+As expected, the build target is shown as `[current]`.
 
-### Build targets
+Let's simulate modifying one of the source files using the `touch` command
+${build(i++, htmlProj, "touch src/ABOUT.md")}
 
-Specifying `--targets` shows the build targets
-${build(i++, helloProj, "./hello.main.kts --targets")}
-Targets are just project methods that have 0 arguments.
-The target listing shows method defined by the script's `HelloWorld` interface and inherited from its parent interfaces.
+and run the build again
+${build(i++, htmlProj, "./html.main.kts")}
+This time, the build target is shown as `[refresh]`.
 
-Let's run the `worldStr` target:
-${build(i++, helloProj, "./hello.main.kts worldStr")}
-The output log shows that `worldStr()` was executed and returned the value "World".
- 
-Another target is `worldName`
-${build(i++, helloProj, "./hello.main.kts worldName")}
-Now the output log shows that `worldName()` was executed, and it in turn called `read("world.text")`
+* `[refresh]` means a method was executed because it depended on a resource that was modified since the last run
 
-### Result caching
+The log shows that `convertFile` was executed just for the file that was modified.
 
-If we look at the targets again we can see that both `worldStr` and `worldName` targets are tagged as **fresh**.
-This means that their results are cached and up to date.
-${build(i++, helloProj, "./hello.main.kts --targets")}
+## More about Jam
 
-The cache contents can be viewed with the `--cache` option.
-${build(i++, helloProj, "./hello.main.kts --cache")}
-(Notice that the results cache is stored in a hidden file, and its name is derived from the project name.)
-
-Because its result is cached, if we run `worldName` again the result will be fetched from cache.
-${build(i++, helloProj, "./hello.main.kts worldName")}
-
-### Dependency tracking
-
-Jam is able to infer that the result of `worldName` depends on the contents of the file `src/world.txt`.
-This means that if the last-modified time of that file changes, the cached result will be invalidated.
-
-${touch(i++, helloProj, "world.txt")}
-
-Now the `worldName` target is shown as stale.
-${build(i++, helloProj, "./hello.main.kts --targets")}
-
-Executing the target again it will be rebuilt.
-${build(i++, helloProj, "./hello.main.kts worldName")}
-
-### Compiling code
-
-The `JavaProject` interface provides a variety of methods for building and executing Java code.
-This is demonstrated by the `runHello` target:
-${build(i++, helloProj, "./hello.main.kts runHello")}
-
-Jam stores references to the compiled classes.
-${build(i++, helloProj, "./hello.main.kts runHello")}
-
-But if there are modifications to source files,
-${touch(i++, helloProj, "HelloWorld.java")}
-
-then Jam will recompile the classes.
-${build(i++, helloProj, "./hello.main.kts runHello")}
-
-## Status
-
-Jam is a work in progress but its Project libraries provide all the functions you need to
-
-* Compile Java code
-* Download Maven packages
-* Run unit tests
-* Generate JavaDoc
-
-In fact, Jam is able to build itself - see [Jam's own build script](src/scripts/JamProject.java).
+If you want to write your own Jam scripts,
+check out the [Project JavaDocs](https://gilesjb.github.io/jam/package-summary.html).
 
 ## Building Jam
 
-The only build dependency of Jam is a JDK version 17 or later.
+Jam is able to build itself - see [Jam's own build script](src/scripts/JamProject.java),
+depending only on JDK version 17 or later.
 
 1. Clone the Jam repo
 2. Type `./setup`
 
-The `setup` shell script creates a copy of the build script called `make-jam` which it uses to build the project.
+The built Jam jar will be in the `build` directory.
 
 To view the JavaDocs type `./make-jam viewDocs`.
-
 """
     }
 

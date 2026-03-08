@@ -1,2 +1,2 @@
 # jam-examples
-Example Jam scripts
+This project contains Jam examples, and also build the documentation for Jam
