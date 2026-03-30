@@ -1,5 +1,6 @@
-#!/usr/bin/env kotlin -Xjvm-default=all -cp ../jam/build/jam-0.9.1.jar
+#!/usr/bin/env kotlin -Xjvm-default=all
 
+@file:DependsOn("org.copalis:jam:0.9.2")
 // Uses https://github.com/homeport/termshot
 
 interface Docs : FileProject {
@@ -156,6 +157,7 @@ To view the JavaDocs type `./make-jam viewDocs`.
     fun readme() {
         clean()
         write("README.md", markdown())
+        println("Finished!")
     }
 }
 

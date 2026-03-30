@@ -1,6 +1,6 @@
 #!/usr/bin/env kotlin -Xjvm-default=all
 
-@file:DependsOn("org.copalis:jam:0.9.1")
+@file:DependsOn("org.copalis:jam:0.9.2")
 @file:DependsOn("org.commonmark:commonmark:0.22.0")
 
 interface MarkdownBuild : FileProject {
