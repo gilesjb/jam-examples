@@ -1,6 +1,6 @@
 #!/usr/bin/env -S kotlin -Xjvm-default=all
 
-@file:DependsOn("org.copalis:jam:0.9.2")
+@file:DependsOn("org.copalis:jam:0.9.5")
 
 interface Fibonacci : Project {
 

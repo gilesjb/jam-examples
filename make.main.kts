@@ -1,6 +1,6 @@
-#!/usr/bin/env kotlin -Xjvm-default=all
+#!/usr/bin/env kotlin -cp ../jam/build/jam-0.9.5.jar -Xjvm-default=all 
 
-@file:DependsOn("org.copalis:jam:0.9.2")
+@file:DependsOn("org.copalis:jam:0.9.5")
 // Uses https://github.com/homeport/termshot
 
 interface Docs : FileProject {
@@ -99,7 +99,7 @@ ${build(i++, fibProj, "./fibonacci.main.kts --cache")}
 Try the other command-line options,
 and also see what happens when you execute the `fib50` target.
 
-## Mutable resources
+## Incremental builds
 
 We've seen how Jam caches return values across runs.
 If a return value is a reference to a mutable resource like a file,
